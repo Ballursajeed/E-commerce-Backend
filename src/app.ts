@@ -19,6 +19,7 @@ app.get("/", (req, res) => {
 //using routes
 app.use("/api/v1/user", userRoute);
 
+
 app.use(errorMiddleware);
 
 app.listen(port, () => {
