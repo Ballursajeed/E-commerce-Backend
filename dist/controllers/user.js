@@ -28,6 +28,16 @@ export const getAllUsers = TryCath(async (req, res, next) => {
     const users = await User.find({});
     return res.status(201).json({
         success: true,
-        users
+        users,
+    });
+});
+export const getUser = TryCath(async (req, res, next) => {
+    const id = req.params.id;
+    const user = await User.findById(id);
+    if (!user)
+        return next(new ErrorHandler("Invalid Id", 400));
+    return res.status(201).json({
+        success: true,
+        user,
     });
 });
