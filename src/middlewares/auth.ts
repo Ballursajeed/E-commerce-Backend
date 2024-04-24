@@ -12,9 +12,6 @@ export const AdminOnly = TryCath(
 
         const user = await User.findById(id);
 
-       console.log(user)
-       console.log(user?.role)
-
         if (!user) return next(new ErrorHandler("Invalid Id",401));
 
         if (user?.role !== "admin") return next(new ErrorHandler("UnAuthorized Access",401))

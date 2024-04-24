@@ -7,8 +7,6 @@ export const AdminOnly = TryCath(async (req, res, next) => {
     if (!id)
         return next(new ErrorHandler("Please Login First", 401));
     const user = await User.findById(id);
-    console.log(user);
-    console.log(user?.role);
     if (!user)
         return next(new ErrorHandler("Invalid Id", 401));
     if (user?.role !== "admin")
