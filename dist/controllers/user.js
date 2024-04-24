@@ -41,3 +41,14 @@ export const getUser = TryCath(async (req, res, next) => {
         user,
     });
 });
+export const deleteUser = TryCath(async (req, res, next) => {
+    const id = req.params.id;
+    const user = await User.findById(id);
+    if (!user)
+        return next(new ErrorHandler("Invalid Id", 400));
+    await user.deleteOne();
+    return res.status(201).json({
+        success: true,
+        message: "User Deleted Successfully",
+    });
+});

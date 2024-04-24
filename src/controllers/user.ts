@@ -48,15 +48,29 @@ export const getAllUsers = TryCath(async (req, res, next) => {
 });
 
 export const getUser = TryCath(async (req, res, next) => {
- 
   const id = req.params.id;
 
-  const user = await User.findById(id); 
+  const user = await User.findById(id);
 
- if(!user) return next(new ErrorHandler("Invalid Id",400))
+  if (!user) return next(new ErrorHandler("Invalid Id", 400));
 
   return res.status(201).json({
     success: true,
     user,
+  });
+});
+
+export const deleteUser = TryCath(async (req, res, next) => {
+  const id = req.params.id;
+
+  const user = await User.findById(id);
+
+  if (!user) return next(new ErrorHandler("Invalid Id", 400));
+
+  await user.deleteOne();
+
+  return res.status(201).json({
+    success: true,
+    message: "User Deleted Successfully",
   });
 });

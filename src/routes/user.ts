@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllUsers, getUser, newUser } from "../controllers/user.js";
+import { deleteUser, getAllUsers, getUser, newUser } from "../controllers/user.js";
 
 const app = express.Router();
 
@@ -10,7 +10,7 @@ const app = express.Router();
  app.get("/all",getAllUsers)
 
  // route - /api/v1/user/dynamicID
- app.get("/:id",getUser)
+ app.route("/:id").get(getUser).delete(deleteUser)
 
 
 export default app;
