@@ -2,12 +2,25 @@ import { TryCath } from "../middlewares/error.js";
 import { Request } from "express";
 import { NewProductRequestBody } from "../types/types.js";
 import { Product } from "../models/product.js";
+import ErrorHandler from "../utils/utility-class.js";
+import { rm } from "fs";
 
 export const newProduct = TryCath(
   async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
     const { name, price, stock, category } = req.body;
 
     const photo = req.file;
+
+    if (!photo) return next(new ErrorHandler("Please add Photo", 400));
+
+    if (!name || !price || !stock || !category) {
+      
+        rm(photo.path, () => {
+        console.log("Deleted");
+      });
+
+      return next(new ErrorHandler("Please Enter All fields", 400));
+    }
 
     await Product.create({
       name,
@@ -23,3 +36,17 @@ export const newProduct = TryCath(
     });
   }
 );
+
+export const getLatestProducts = TryCath(
+    async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
+      
+  
+         const products = await Product.find({}).sort({createdAt:-1}).limit(5);
+         
+
+      return res.status(200).json({
+        success: true,
+        products,
+      });
+    }
+  );
