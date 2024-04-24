@@ -32,3 +32,10 @@ export const getLatestProducts = TryCath(async (req, res, next) => {
         products,
     });
 });
+export const getAllCategories = TryCath(async (req, res, next) => {
+    const categories = await Product.distinct("category");
+    return res.status(200).json({
+        success: true,
+        categories,
+    });
+});
