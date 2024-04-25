@@ -5,6 +5,8 @@ import { rm } from "fs";
 export const newProduct = TryCath(async (req, res, next) => {
     const { name, price, stock, category } = req.body;
     const photo = req.file;
+    console.log(photo);
+    console.log(name, price, stock, category);
     if (!photo)
         return next(new ErrorHandler("Please add Photo", 400));
     if (!name || !price || !stock || !category) {
@@ -54,15 +56,17 @@ export const getSingleProduct = TryCath(async (req, res, next) => {
     });
 });
 export const updateProduct = TryCath(async (req, res, next) => {
+    const id = req.params.id;
     const { name, price, stock, category } = req.body;
-    const { id } = req.params;
     const photo = req.file;
     const product = await Product.findById(id);
+    console.log(photo);
+    console.log(name, price, stock, category, id);
     if (!product)
-        return next(new ErrorHandler("Invalid product Id", 404));
+        return next(new ErrorHandler("Product Not Found", 404));
     if (photo) {
         rm(product.photo, () => {
-            console.log(" old Photo Deleted");
+            console.log("Old Photo Deleted");
         });
         product.photo = photo.path;
     }

@@ -13,7 +13,7 @@ app.get("/categories",getAllCategories);
 
 app.get("/admin-products",getAdminProducts);
 
-app.route("/:id").get(getSingleProduct).put(updateProduct).delete(deleteProduct)
+app.route("/:id").get(getSingleProduct).put(,AdminOnly , singleUpload,updateProduct).delete(deleteProduct)
 
 
 

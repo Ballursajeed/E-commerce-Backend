@@ -1,5 +1,4 @@
 import { TryCath } from "../middlewares/error.js";
-import { Request } from "express";
 import { NewProductRequestBody } from "../types/types.js";
 import { Product } from "../models/product.js";
 import ErrorHandler from "../utils/utility-class.js";
@@ -11,6 +10,10 @@ export const newProduct = TryCath(
     const { name, price, stock, category } = req.body;
 
     const photo = req.file;
+
+    console.log(photo);
+
+  console.log(name,price,stock,category)
 
     if (!photo) return next(new ErrorHandler("Please add Photo", 400));
 
@@ -79,32 +82,33 @@ export const getSingleProduct = TryCath(async (req, res, next) => {
   });
 });
 
-export const updateProduct = TryCath(async (req, res, next) => {
+import { Request, Response, NextFunction } from 'express';
+
+export const updateProduct = TryCath(async (req: Request<{ id: string }, {}, NewProductRequestBody>, res, next) => {
+  const  id  = req.params.id;
   const { name, price, stock, category } = req.body;
-
-  const { id } = req.params;
-
   const photo = req.file;
-
   const product = await Product.findById(id);
 
-  if(!product) return next(new ErrorHandler("Invalid product Id",404));
+ console.log(photo);
+
+  console.log(name,price,stock,category,id)
+
+  if (!product) return next(new ErrorHandler("Product Not Found", 404));
 
   if (photo) {
-    rm(product.photo, () => {
-      console.log(" old Photo Deleted");
+    rm(product.photo!, () => {
+      console.log("Old Photo Deleted");
     });
-
-    product.photo = photo.path
+    product.photo = photo.path;
   }
 
-   if(name) product.name = name;
-   if(price) product.price = price;
-   if(stock) product.stock = stock;
-   if(category) product.category = category;
+  if (name) product.name = name;
+  if (price) product.price = price;
+  if (stock) product.stock = stock;
+  if (category) product.category = category;
 
-await product.save()
-
+  await product.save();
 
   return res.status(200).json({
     success: true,
@@ -112,21 +116,22 @@ await product.save()
   });
 });
 
+
+
+
 export const deleteProduct = TryCath(async (req, res, next) => {
+  const product = await Product.findById(req.params.id);
 
-    const product = await Product.findById(req.params.id);
-   
-    if(!product) return next(new ErrorHandler("Product not found",404));
- 
-    rm(product.photo, () => {
-        console.log(" Product photo Deleted");
-    })
+  if (!product) return next(new ErrorHandler("Product not found", 404));
 
-    await Product.deleteOne();
-
-    return res.status(200).json({
-      success: true,
-      message: "Product Deleted Successfully",
-      
-    });
+  rm(product.photo, () => {
+    console.log(" Product photo Deleted");
   });
+
+  await Product.deleteOne();
+
+  return res.status(200).json({
+    success: true,
+    message: "Product Deleted Successfully",
+  });
+});
