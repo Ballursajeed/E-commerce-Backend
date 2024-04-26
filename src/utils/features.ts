@@ -3,10 +3,10 @@ import { InvalidateCacheProps } from "../types/types.js";
 import { myCache } from "../app.js";
 import { Product } from "../models/product.js";
 
-export const connectDB = () => {
+export const connectDB = (mongoURI:string) => {
   mongoose
     .connect(
-      "mongodb+srv://sajeedballur3:welcome786@cluster0.igmhhyy.mongodb.net/",
+     mongoURI,
       { dbName: "ecommerce" }
     )
     .then(() => console.log("MongoDB connected!!!"))

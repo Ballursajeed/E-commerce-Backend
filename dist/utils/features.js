@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 import { myCache } from "../app.js";
 import { Product } from "../models/product.js";
-export const connectDB = () => {
+export const connectDB = (mongoURI) => {
     mongoose
-        .connect("mongodb+srv://sajeedballur3:welcome786@cluster0.igmhhyy.mongodb.net/", { dbName: "ecommerce" })
+        .connect(mongoURI, { dbName: "ecommerce" })
         .then(() => console.log("MongoDB connected!!!"))
         .catch((error) => console.error("MongoDB connection error:", error));
 };
