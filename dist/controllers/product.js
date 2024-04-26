@@ -5,8 +5,6 @@ import { rm } from "fs";
 export const newProduct = TryCath(async (req, res, next) => {
     const { name, price, stock, category } = req.body;
     const photo = req.file;
-    console.log(photo);
-    console.log(name, price, stock, category);
     if (!photo)
         return next(new ErrorHandler("Please add Photo", 400));
     if (!name || !price || !stock || !category) {
@@ -60,8 +58,6 @@ export const updateProduct = TryCath(async (req, res, next) => {
     const { name, price, stock, category } = req.body;
     const photo = req.file;
     const product = await Product.findById(id);
-    console.log(photo);
-    console.log(name, price, stock, category, id);
     if (!product)
         return next(new ErrorHandler("Product Not Found", 404));
     if (photo) {
@@ -95,5 +91,37 @@ export const deleteProduct = TryCath(async (req, res, next) => {
     return res.status(200).json({
         success: true,
         message: "Product Deleted Successfully",
+    });
+});
+export const getAllProducts = TryCath(async (req, res, next) => {
+    const { search, sort, category, price } = req.query;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(process.env.PRODUCT_PER_PAGE) || 8;
+    const skip = limit * (page - 1);
+    const baseQuery = {};
+    if (search)
+        baseQuery.name = {
+            $regex: search,
+            $options: "i",
+        };
+    if (price)
+        baseQuery.price = {
+            $lte: Number(price),
+        };
+    if (category)
+        baseQuery.category = category;
+    const productsPromise = Product.find(baseQuery)
+        .sort(sort ? { price: sort === "asc" ? 1 : -1 } : undefined)
+        .limit(limit)
+        .skip(skip);
+    const [products, filterOnlyProduct] = await Promise.all([
+        productsPromise,
+        Product.find(baseQuery),
+    ]);
+    const totalPage = Math.ceil(filterOnlyProduct.length / limit);
+    return res.status(200).json({
+        success: true,
+        products,
+        totalPage,
     });
 });

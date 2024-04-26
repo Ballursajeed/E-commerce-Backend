@@ -1,19 +1,18 @@
 import { TryCath } from "../middlewares/error.js";
-import { NewProductRequestBody } from "../types/types.js";
+import {
+  BaseQuery,
+  NewProductRequestBody,
+  SearchRequestQuery,
+} from "../types/types.js";
 import { Product } from "../models/product.js";
 import ErrorHandler from "../utils/utility-class.js";
 import { rm } from "fs";
-import { privateDecrypt } from "crypto";
 
 export const newProduct = TryCath(
   async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
     const { name, price, stock, category } = req.body;
 
     const photo = req.file;
-
-    console.log(photo);
-
-  console.log(name,price,stock,category)
 
     if (!photo) return next(new ErrorHandler("Please add Photo", 400));
 
@@ -82,42 +81,41 @@ export const getSingleProduct = TryCath(async (req, res, next) => {
   });
 });
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
-export const updateProduct = TryCath(async (req: Request<{ id: string }, {}, NewProductRequestBody>, res, next) => {
-  const  id  = req.params.id;
-  const { name, price, stock, category } = req.body;
-  const photo = req.file;
-  const product = await Product.findById(id);
+export const updateProduct = TryCath(
+  async (
+    req: Request<{ id: string }, {}, NewProductRequestBody>,
+    res,
+    next
+  ) => {
+    const id = req.params.id;
+    const { name, price, stock, category } = req.body;
+    const photo = req.file;
+    const product = await Product.findById(id);
 
- console.log(photo);
+    if (!product) return next(new ErrorHandler("Product Not Found", 404));
 
-  console.log(name,price,stock,category,id)
+    if (photo) {
+      rm(product.photo!, () => {
+        console.log("Old Photo Deleted");
+      });
+      product.photo = photo.path;
+    }
 
-  if (!product) return next(new ErrorHandler("Product Not Found", 404));
+    if (name) product.name = name;
+    if (price) product.price = price;
+    if (stock) product.stock = stock;
+    if (category) product.category = category;
 
-  if (photo) {
-    rm(product.photo!, () => {
-      console.log("Old Photo Deleted");
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product Updated Successfully",
     });
-    product.photo = photo.path;
   }
-
-  if (name) product.name = name;
-  if (price) product.price = price;
-  if (stock) product.stock = stock;
-  if (category) product.category = category;
-
-  await product.save();
-
-  return res.status(200).json({
-    success: true,
-    message: "Product Updated Successfully",
-  });
-});
-
-
-
+);
 
 export const deleteProduct = TryCath(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
@@ -135,3 +133,47 @@ export const deleteProduct = TryCath(async (req, res, next) => {
     message: "Product Deleted Successfully",
   });
 });
+
+export const getAllProducts = TryCath(
+  async (req: Request<{}, {}, {}, SearchRequestQuery>, res, next) => {
+    const { search, sort, category, price } = req.query;
+
+    const page = Number(req.query.page) || 1;
+
+    const limit = Number(process.env.PRODUCT_PER_PAGE) || 8;
+    const skip = limit * (page - 1);
+
+    const baseQuery: BaseQuery = {};
+
+    if (search)
+      baseQuery.name = {
+        $regex: search,
+        $options: "i",
+      };
+
+    if (price)
+      baseQuery.price = {
+        $lte: Number(price),
+      };
+
+    if (category) baseQuery.category = category;
+
+    const productsPromise = Product.find(baseQuery)
+      .sort(sort ? { price: sort === "asc" ? 1 : -1 } : undefined)
+      .limit(limit)
+      .skip(skip);
+
+    const [products, filterOnlyProduct] = await Promise.all([
+      productsPromise,
+      Product.find(baseQuery),
+    ]);
+
+    const totalPage = Math.ceil(filterOnlyProduct.length / limit);
+
+    return res.status(200).json({
+      success: true,
+      products,
+      totalPage,
+    });
+  }
+);
