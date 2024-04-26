@@ -8,37 +8,6 @@ import { Product } from "../models/product.js";
 import ErrorHandler from "../utils/utility-class.js";
 import { rm } from "fs";
 
-export const newProduct = TryCath(
-  async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
-    const { name, price, stock, category } = req.body;
-
-    const photo = req.file;
-
-    if (!photo) return next(new ErrorHandler("Please add Photo", 400));
-
-    if (!name || !price || !stock || !category) {
-      rm(photo.path, () => {
-        console.log("Deleted");
-      });
-
-      return next(new ErrorHandler("Please Enter All fields", 400));
-    }
-
-    await Product.create({
-      name,
-      price,
-      stock,
-      category: category.toLowerCase(),
-      photo: photo?.path,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Product Created Successfully",
-    });
-  }
-);
-
 //Revalidate on new,Update,Delete Product and New Order
 export const getLatestProducts = TryCath(
   async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
@@ -122,6 +91,40 @@ export const getSingleProduct = TryCath(async (req, res, next) => {
 
 import { Request, Response, NextFunction } from "express";
 import { myCache } from "../app.js";
+import { invalidateCache } from "../utils/features.js";
+
+export const newProduct = TryCath(
+  async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
+    const { name, price, stock, category } = req.body;
+
+    const photo = req.file;
+
+    if (!photo) return next(new ErrorHandler("Please add Photo", 400));
+
+    if (!name || !price || !stock || !category) {
+      rm(photo.path, () => {
+        console.log("Deleted");
+      });
+
+      return next(new ErrorHandler("Please Enter All fields", 400));
+    }
+
+    await Product.create({
+      name,
+      price,
+      stock,
+      category: category.toLowerCase(),
+      photo: photo?.path,
+    });
+
+    await invalidateCache({ product: true });
+
+    return res.status(201).json({
+      success: true,
+      message: "Product Created Successfully",
+    });
+  }
+);
 
 export const updateProduct = TryCath(
   async (
@@ -150,6 +153,8 @@ export const updateProduct = TryCath(
 
     await product.save();
 
+    await invalidateCache({ product: true });
+
     return res.status(200).json({
       success: true,
       message: "Product Updated Successfully",
@@ -167,6 +172,8 @@ export const deleteProduct = TryCath(async (req, res, next) => {
   });
 
   await Product.deleteOne();
+
+  await invalidateCache({ product: true });
 
   return res.status(200).json({
     success: true,
