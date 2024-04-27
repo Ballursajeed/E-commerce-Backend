@@ -1,4 +1,6 @@
+import exp from "constants";
 import { NextFunction, Request, Response } from "express";
+import { disconnect } from "process";
 
 export interface NewUserRequestBody {
   name: string;
@@ -45,4 +47,31 @@ export type InvalidateCacheProps = {
   product?:boolean;
   order?: boolean;
   admin?:boolean;
+};
+
+export type OrderITemType = {
+  name:string;
+  photo:string;
+  price:number;
+  quantity:number;
+  productId:string
+}
+
+export type ShippingInfoType = {
+  address:string;
+  city:string;
+  state:string;
+  country:string;
+  pinCode:number;
+}
+
+export interface NewOrderRequestBody  {
+  shippingInfo: {};
+  user:string;
+  subtotal:number;
+  tax:number;
+  shippingCharges:number;
+  total:number;
+  discount:number;
+  orderItems:OrderITemType[];
 }
