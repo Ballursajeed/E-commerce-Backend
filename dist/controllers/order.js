@@ -53,3 +53,20 @@ export const allOrders = TryCath(async (req, res, next) => {
         orders,
     });
 });
+export const getSingleOrder = TryCath(async (req, res, next) => {
+    const { id } = req.params;
+    let order;
+    const key = `order-${id}`;
+    if (myCache.has(key))
+        order = JSON.parse(myCache.get(key));
+    else {
+        order = await Order.findById(id).populate("user", "name");
+        if (!order)
+            return next(new ErrorHandler("Order Not Found", 404));
+        myCache.set(key, JSON.stringify(order));
+    }
+    return res.status(200).json({
+        success: true,
+        order,
+    });
+});

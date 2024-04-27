@@ -1,6 +1,6 @@
 import express from "express";
 import { AdminOnly } from "../middlewares/auth.js";
-import { allOrders, myOrders, newOrder } from "../controllers/order.js";
+import { allOrders, getSingleOrder, myOrders, newOrder } from "../controllers/order.js";
 
 const app = express.Router();
 
@@ -10,5 +10,7 @@ const app = express.Router();
  app.get("/my",myOrders)
  
  app.get("/all",AdminOnly,allOrders)
+
+ app.route("/:id").get(getSingleOrder)
 
 export default app;

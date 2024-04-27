@@ -64,19 +64,38 @@ export const myOrders = TryCath(async (req, res, next) => {
 });
 
 export const allOrders = TryCath(async (req, res, next) => {
-
   let orders = [];
 
   const key = `all-orders`;
 
   if (myCache.has(key)) orders = JSON.parse(myCache.get(key) as string);
   else {
-    orders = await Order.find().populate("user","name");
+    orders = await Order.find().populate("user", "name");
     myCache.set(key, JSON.stringify(orders));
   }
 
   return res.status(200).json({
     success: true,
     orders,
+  });
+});
+
+export const getSingleOrder = TryCath(async (req, res, next) => {
+  const { id } = req.params;
+  let order;
+  const key = `order-${id}`;
+
+  if (myCache.has(key)) order = JSON.parse(myCache.get(key) as string);
+  else {
+    order = await Order.findById(id).populate("user", "name");
+
+    if (!order) return next(new ErrorHandler("Order Not Found", 404));
+
+    myCache.set(key, JSON.stringify(order));
+  }
+
+  return res.status(200).json({
+    success: true,
+    order,
   });
 });
