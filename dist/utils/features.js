@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { myCache } from "../app.js";
 import { Product } from "../models/product.js";
-import { Order } from "../models/order.js";
 export const connectDB = (mongoURI) => {
     mongoose
         .connect(mongoURI, { dbName: "ecommerce" })
@@ -9,22 +8,26 @@ export const connectDB = (mongoURI) => {
         .catch((error) => console.error("MongoDB connection error:", error));
 };
 //"mongodb+srv://sajeedballur:3BkcoecCgWPgdiou@cluster0.i4gylc9.mongodb.net/"
-export const invalidateCache = async ({ product, order, admin, userId, orderId }) => {
+export const invalidateCache = async ({ product, order, admin, userId, orderId, productId, }) => {
     if (product) {
         const productKeys = [
             "latest-products",
             "catogories",
             "all-products",
+            `product-${productId}`,
         ];
-        const products = await Product.find({}).select("_id");
-        products.forEach((i) => {
-            productKeys.push(`product-${i._id}`);
-        });
+        if (typeof productId === "string")
+            productKeys.push(`product-${productId}`);
+        if (typeof productId === "object")
+            productId.forEach(i => productKeys.push(`product-${i}`));
         myCache.del(productKeys);
     }
     if (order) {
-        const orderKeys = ["all-orders", `my-orders-${userId}`, `order-${orderId}`];
-        const orders = await Order.find({}).select("_id");
+        const orderKeys = [
+            "all-orders",
+            `my-orders-${userId}`,
+            `order-${orderId}`,
+        ];
         myCache.del(orderKeys);
     }
     if (admin) {

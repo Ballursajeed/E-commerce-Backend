@@ -53,7 +53,7 @@ export const newOrder = TryCath(async (req, res, next) => {
     const { shippingInfo, orderItems, user, subtotal, tax, shippingCharges, discount, total, } = req.body;
     if (!shippingInfo || !orderItems || !user || !subtotal || !tax || !total)
         return next(new ErrorHandler("Please Enter all Fields", 400));
-    await Order.create({
+    const order = await Order.create({
         shippingInfo,
         orderItems,
         user,
@@ -69,6 +69,7 @@ export const newOrder = TryCath(async (req, res, next) => {
         order: true,
         admin: true,
         userId: user,
+        productId: order.orderItems.map(i => String(i.productId))
     });
     return res.status(201).json({
         success: true,

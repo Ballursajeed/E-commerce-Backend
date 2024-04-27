@@ -4,12 +4,9 @@ import { myCache } from "../app.js";
 import { Product } from "../models/product.js";
 import { Order } from "../models/order.js";
 
-export const connectDB = (mongoURI:string) => {
+export const connectDB = (mongoURI: string) => {
   mongoose
-    .connect(
-     mongoURI,
-      { dbName: "ecommerce" }
-    )
+    .connect(mongoURI, { dbName: "ecommerce" })
     .then(() => console.log("MongoDB connected!!!"))
     .catch((error) => console.error("MongoDB connection error:", error));
 };
@@ -20,45 +17,41 @@ export const invalidateCache = async ({
   order,
   admin,
   userId,
-  orderId
+  orderId,
+  productId,
 }: InvalidateCacheProps) => {
   if (product) {
     const productKeys: string[] = [
       "latest-products",
       "catogories",
       "all-products",
+      `product-${productId}`,
     ];
 
-    const products = await Product.find({}).select("_id");
+    if (typeof productId === "string") productKeys.push(`product-${productId}`);
 
-    products.forEach((i) => {
-      productKeys.push(`product-${i._id}`);
-    });
+    if(typeof productId === "object") productId.forEach(i => productKeys.push(`product-${i}`));
 
     myCache.del(productKeys);
   }
   if (order) {
-
-    const orderKeys : string[] = ["all-orders",`my-orders-${userId}`,`order-${orderId}`];
-
-    const orders = await Order.find({}).select("_id");
-
-     myCache.del(orderKeys);
-
+    const orderKeys: string[] = [
+      "all-orders",
+      `my-orders-${userId}`,
+      `order-${orderId}`,
+    ];
+    myCache.del(orderKeys);
   }
   if (admin) {
   }
 };
 
-
 export const reduceStock = async (orderItems: OrderITemType[]) => {
-
-  for(let i = 0;i<orderItems.length; i++){
+  for (let i = 0; i < orderItems.length; i++) {
     const order = orderItems[i];
     const product = await Product.findById(order.productId);
-    if(!product) throw new Error("Product Not Found");
-    product.stock -= order.quantity
-    await product.save()
+    if (!product) throw new Error("Product Not Found");
+    product.stock -= order.quantity;
+    await product.save();
   }
-
-}
+};
