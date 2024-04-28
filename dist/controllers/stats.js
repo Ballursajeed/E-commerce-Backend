@@ -10,6 +10,8 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
         stats = JSON.parse(myCache.get("admin-stats"));
     else {
         const today = new Date();
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
         const thisMonth = {
             start: new Date(today.getFullYear(), today.getMonth(), 1),
             end: today,
@@ -54,7 +56,13 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
                 $lte: lastMonth.end,
             },
         });
-        const [thisMonthProducts, thisMonthUsers, thisMonthOrders, LastMonthProduct, LastMonthUsers, LastMonthOrders, productsCount, usersCount, allOrders,] = await Promise.all([
+        const LastSixMonthOrdersPromise = Order.find({
+            createdAt: {
+                $gte: sixMonthsAgo,
+                $lte: today,
+            },
+        });
+        const [thisMonthProducts, thisMonthUsers, thisMonthOrders, LastMonthProduct, LastMonthUsers, LastMonthOrders, productsCount, usersCount, allOrders, LastSixMonthOrders,] = await Promise.all([
             thisMonthProductsPromise,
             thisMonthUsersPromise,
             thisMonthOrdersPromise,
@@ -64,6 +72,7 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
             Product.countDocuments(),
             User.countDocuments(),
             Order.find({}).select("total"),
+            LastSixMonthOrdersPromise,
         ]);
         const thisMonthRevenue = thisMonthOrders.reduce((total, order) => total + (order.total || 0), 0);
         const LastMonthRevenue = LastMonthOrders.reduce((total, order) => total + (order.total || 0), 0);
@@ -80,9 +89,23 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
             product: productsCount,
             order: allOrders.length,
         };
+        const orderMonthCounts = new Array(6).fill(0);
+        const orderMonthRevenue = new Array(6).fill(0);
+        LastSixMonthOrders.forEach((order) => {
+            const creationData = order.createdAt;
+            const monthDiff = today.getMonth() - creationData.getMonth();
+            if (monthDiff < 6) {
+                orderMonthCounts[6 - monthDiff - 1] += 1;
+                orderMonthRevenue[6 - monthDiff - 1] += order.total;
+            }
+        });
         stats = {
             Changepercent,
             counts,
+            chart: {
+                order: orderMonthCounts,
+                revenue: orderMonthRevenue,
+            },
         };
     }
     return res.status(200).json({
