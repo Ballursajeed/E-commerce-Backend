@@ -73,6 +73,9 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
       LastMonthProduct,
       LastMonthUsers,
       LastMonthOrders,
+      productsCount,
+      usersCount,
+      allOrders,
     ] = await Promise.all([
       thisMonthProductsPromise,
       thisMonthUsersPromise,
@@ -80,6 +83,9 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
       LastMonthProductPromise,
       LastMonthUsersPromise,
       LastMonthOrdersPromise,
+      Product.countDocuments(),
+      User.countDocuments(),
+      Order.find({}).select("total"),
     ]);
 
     const thisMonthRevenue = thisMonthOrders.reduce(
@@ -106,8 +112,21 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
       ),
     };
 
+    const revenue = allOrders.reduce(
+      (total, order) => total + (order.total || 0),
+      0
+    );
+
+    const counts = {
+      revenue,
+      user: usersCount,
+      product: productsCount,
+      order: allOrders.length,
+    };
+
     stats = {
       Changepercent,
+      counts,
     };
   }
 

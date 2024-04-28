@@ -54,13 +54,16 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
                 $lte: lastMonth.end,
             },
         });
-        const [thisMonthProducts, thisMonthUsers, thisMonthOrders, LastMonthProduct, LastMonthUsers, LastMonthOrders,] = await Promise.all([
+        const [thisMonthProducts, thisMonthUsers, thisMonthOrders, LastMonthProduct, LastMonthUsers, LastMonthOrders, productsCount, usersCount, allOrders,] = await Promise.all([
             thisMonthProductsPromise,
             thisMonthUsersPromise,
             thisMonthOrdersPromise,
             LastMonthProductPromise,
             LastMonthUsersPromise,
             LastMonthOrdersPromise,
+            Product.countDocuments(),
+            User.countDocuments(),
+            Order.find({}).select("total"),
         ]);
         const thisMonthRevenue = thisMonthOrders.reduce((total, order) => total + (order.total || 0), 0);
         const LastMonthRevenue = LastMonthOrders.reduce((total, order) => total + (order.total || 0), 0);
@@ -70,8 +73,16 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
             user: calculatePercentage(thisMonthUsers.length, LastMonthUsers.length),
             order: calculatePercentage(thisMonthOrders.length, LastMonthOrders.length),
         };
+        const revenue = allOrders.reduce((total, order) => total + (order.total || 0), 0);
+        const counts = {
+            revenue,
+            user: usersCount,
+            product: productsCount,
+            order: allOrders.length,
+        };
         stats = {
             Changepercent,
+            counts,
         };
     }
     return res.status(200).json({
