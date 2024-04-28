@@ -1,10 +1,12 @@
 import express from "express";
 import { AdminOnly } from "../middlewares/auth.js";
-import { newCoupon } from "../controllers/payment.js";
+import { applyDiscounts, newCoupon } from "../controllers/payment.js";
 
 const app = express.Router();
 
-// route - /api/v1/user/new
- app.post("/coupon/new",newCoupon)
+ app.post("/coupon/new",newCoupon);
+
+ app.get("/discount",applyDiscounts);
+
 
 export default app;

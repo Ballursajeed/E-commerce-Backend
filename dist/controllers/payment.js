@@ -8,6 +8,16 @@ export const newCoupon = TryCath(async (req, res, next) => {
     await Coupon.create({ code: coupon, amount });
     return res.status(201).json({
         success: true,
-        message: `Coupon ${coupon} Created successfully`
+        message: `Coupon ${coupon} Created successfully`,
+    });
+});
+export const applyDiscounts = TryCath(async (req, res, next) => {
+    const { coupon } = req.query;
+    const discount = await Coupon.findOne({ code: coupon });
+    if (!discount)
+        return next(new ErrorHandler("Invalid Coupon Code", 400));
+    return res.status(200).json({
+        success: true,
+        discount: discount.amount,
     });
 });
