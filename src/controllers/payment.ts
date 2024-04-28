@@ -28,3 +28,27 @@ export const applyDiscounts = TryCath(async (req, res, next) => {
     discount: discount.amount,
   });
 });
+
+export const allCoupons = TryCath(async (req, res, next) => {
+
+ const coupons = await Coupon.find({})
+
+  return res.status(200).json({
+    success: true,
+    coupons
+  });
+});
+
+export const deleteCoupon = TryCath(async (req, res, next) => {
+
+  const {id} = req.params;
+
+  const coupon = await Coupon.findByIdAndDelete(id)
+
+  if(!coupon) return next(new ErrorHandler("Invalid ID",400))
+ 
+   return res.status(200).json({
+     success: true,
+     message:`Coupon ${coupon?.code} Deleted Successfully`
+   });
+ });
