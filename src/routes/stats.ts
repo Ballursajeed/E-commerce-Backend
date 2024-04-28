@@ -1,15 +1,15 @@
 import express from "express";
 import { AdminOnly } from "../middlewares/auth.js";
-import { getDashboardStats } from "../controllers/stats.js";
+import { getBarStats, getDashboardStats, getLineStats, getPieStats } from "../controllers/stats.js";
 
 const app = express.Router();
 
- app.get("/stats",getDashboardStats)
+ app.get("/stats",AdminOnly,getDashboardStats)
 
- app.get("/pie",);
+ app.get("/pie",AdminOnly,getPieStats);
 
- app.get("/bar",);
+ app.get("/bar",AdminOnly,getBarStats);
 
- app.get("/line",);
+ app.get("/line",AdminOnly,getLineStats);
 
 export default app;
