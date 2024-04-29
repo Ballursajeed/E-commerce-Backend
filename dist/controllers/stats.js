@@ -142,6 +142,31 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
         stats,
     });
 });
-export const getPieStats = TryCath(async (req, res, next) => { });
+export const getPieStats = TryCath(async (req, res, next) => {
+    let charts;
+    const key = "admin-stats";
+    if (myCache.has(key))
+        charts = JSON.parse(myCache.get(key));
+    else {
+        const [processingOrder, shippedOrder, deliveredOrder] = await Promise.all([
+            Order.countDocuments({ status: "Processing" }),
+            Order.countDocuments({ status: "Shipped" }),
+            Order.countDocuments({ status: "Delivered" }),
+        ]);
+        const orderFullFillment = {
+            processing: processingOrder,
+            shipped: shippedOrder,
+            delivered: deliveredOrder,
+        };
+        charts = {
+            orderFullFillment,
+        };
+        myCache.set(key, JSON.stringify(charts));
+    }
+    return res.status(200).json({
+        success: true,
+        charts,
+    });
+});
 export const getBarStats = TryCath(async (req, res, next) => { });
 export const getLineStats = TryCath(async (req, res, next) => { });
