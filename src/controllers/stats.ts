@@ -206,6 +206,14 @@ export const getPieStats = TryCath(async (req, res, next) => {
 
   if (myCache.has(key)) charts = JSON.parse(myCache.get(key) as string);
   else {
+    const allOrderPromise = Order.find({}).select([
+      "total",
+      "discount",
+      "subtotal",
+      "tax",
+      "shippingCharges",
+    ]);
+
     const [
       processingOrder,
       shippedOrder,
@@ -213,6 +221,7 @@ export const getPieStats = TryCath(async (req, res, next) => {
       categories,
       productsCount,
       productsOutOfStock,
+      allOrders,
     ] = await Promise.all([
       Order.countDocuments({ status: "Processing" }),
       Order.countDocuments({ status: "Shipped" }),
@@ -220,6 +229,7 @@ export const getPieStats = TryCath(async (req, res, next) => {
       Product.distinct("category"),
       Product.countDocuments(),
       Product.countDocuments({ stock: 0 }),
+      allOrderPromise,
     ]);
 
     const orderFullFillment = {
@@ -227,12 +237,6 @@ export const getPieStats = TryCath(async (req, res, next) => {
       shipped: shippedOrder,
       delivered: deliveredOrder,
     };
-
-    console.log(
-      orderFullFillment.processing,
-      orderFullFillment.shipped,
-      orderFullFillment.delivered
-    );
 
     const productCategoriesRatio: Record<string, number>[] =
       await getInvetories({
@@ -245,10 +249,41 @@ export const getPieStats = TryCath(async (req, res, next) => {
       outOfStock: productsOutOfStock,
     };
 
+    const grossIncome = allOrders.reduce(
+      (prev, order) => prev + (order.total || 0),
+      0
+    );
+
+    const discount = allOrders.reduce(
+      (prev, order) => prev + (order.discount || 0),
+      0
+    );
+
+    const productionCost = allOrders.reduce(
+      (prev, order) => prev + (order.shippingCharges || 0),
+      0
+    );
+
+    const burnt = allOrders.reduce((prev, order) => prev + (order.tax || 0), 0);
+
+    const marketingCost = Math.round(grossIncome * (30 / 100));
+
+    const netMargin =
+      grossIncome - discount - productionCost - burnt - marketingCost;
+
+    const revenueDistribution = {
+      netMargin,
+      discount,
+      productionCost,
+      burnt,
+      marketingCost,
+    };
+
     charts = {
       orderFullFillment,
       productCategoriesRatio,
       stockAvailability,
+      revenueDistribution,
     };
 
     myCache.set(key, JSON.stringify(charts));
