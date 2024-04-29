@@ -33,7 +33,6 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
         $gte: thisMonth.start,
         $lte: thisMonth.end,
       },
-
     });
 
     const LastMonthProductPromise = Product.find({
@@ -109,7 +108,7 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
       LastSixMonthOrdersPromise,
       Product.distinct("category"),
       User.countDocuments({ gender: "female" }),
-      latestTransactionsPromise
+      latestTransactionsPromise,
     ]);
 
     const thisMonthRevenue = thisMonthOrders.reduce(
@@ -180,6 +179,14 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
       female: femaleUsersCount,
     };
 
+    const modifyLatestTransaction = latestTransactions.map((i) => ({
+      _id: i._id,
+      discount: i.discount,
+      amount: i.total,
+      quantity: i.orderItems.length,
+      status: i.status,
+    }));
+
     stats = {
       Changepercent,
       categoryCount,
@@ -189,8 +196,10 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
         revenue: orderMonthRevenue,
       },
       userRatio,
-      latestTransactions
+      latestTransactions: modifyLatestTransaction,
     };
+
+    myCache.set("admin-stats", JSON.stringify(stats));
   }
 
   return res.status(200).json({

@@ -78,7 +78,7 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
             LastSixMonthOrdersPromise,
             Product.distinct("category"),
             User.countDocuments({ gender: "female" }),
-            latestTransactionsPromise
+            latestTransactionsPromise,
         ]);
         const thisMonthRevenue = thisMonthOrders.reduce((total, order) => total + (order.total || 0), 0);
         const LastMonthRevenue = LastMonthOrders.reduce((total, order) => total + (order.total || 0), 0);
@@ -117,6 +117,13 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
             male: usersCount - femaleUsersCount,
             female: femaleUsersCount,
         };
+        const modifyLatestTransaction = latestTransactions.map((i) => ({
+            _id: i._id,
+            discount: i.discount,
+            amount: i.total,
+            quantity: i.orderItems.length,
+            status: i.status,
+        }));
         stats = {
             Changepercent,
             categoryCount,
@@ -126,8 +133,9 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
                 revenue: orderMonthRevenue,
             },
             userRatio,
-            latestTransactions
+            latestTransactions: modifyLatestTransaction,
         };
+        myCache.set("admin-stats", JSON.stringify(stats));
     }
     return res.status(200).json({
         success: true,
