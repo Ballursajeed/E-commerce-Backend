@@ -212,12 +212,14 @@ export const getPieStats = TryCath(async (req, res, next) => {
       deliveredOrder,
       categories,
       productsCount,
+      productsOutOfStock,
     ] = await Promise.all([
       Order.countDocuments({ status: "Processing" }),
       Order.countDocuments({ status: "Shipped" }),
       Order.countDocuments({ status: "Delivered" }),
       Product.distinct("category"),
       Product.countDocuments(),
+      Product.countDocuments({ stock: 0 }),
     ]);
 
     const orderFullFillment = {
@@ -232,14 +234,21 @@ export const getPieStats = TryCath(async (req, res, next) => {
       orderFullFillment.delivered
     );
 
-    const productCategoriesRatio: Record<string, number>[] = await getInvetories({
-      categories,
-      productsCount,
-    });
+    const productCategoriesRatio: Record<string, number>[] =
+      await getInvetories({
+        categories,
+        productsCount,
+      });
+
+    const stockAvailability = {
+      inStock: productsCount - productsOutOfStock,
+      outOfStock: productsOutOfStock,
+    };
 
     charts = {
       orderFullFillment,
       productCategoriesRatio,
+      stockAvailability,
     };
 
     myCache.set(key, JSON.stringify(charts));

@@ -144,12 +144,13 @@ export const getPieStats = TryCath(async (req, res, next) => {
     if (myCache.has(key))
         charts = JSON.parse(myCache.get(key));
     else {
-        const [processingOrder, shippedOrder, deliveredOrder, categories, productsCount,] = await Promise.all([
+        const [processingOrder, shippedOrder, deliveredOrder, categories, productsCount, productsOutOfStock,] = await Promise.all([
             Order.countDocuments({ status: "Processing" }),
             Order.countDocuments({ status: "Shipped" }),
             Order.countDocuments({ status: "Delivered" }),
             Product.distinct("category"),
             Product.countDocuments(),
+            Product.countDocuments({ stock: 0 }),
         ]);
         const orderFullFillment = {
             processing: processingOrder,
@@ -161,9 +162,14 @@ export const getPieStats = TryCath(async (req, res, next) => {
             categories,
             productsCount,
         });
+        const stockAvailability = {
+            inStock: productsCount - productsOutOfStock,
+            outOfStock: productsOutOfStock,
+        };
         charts = {
             orderFullFillment,
             productCategoriesRatio,
+            stockAvailability,
         };
         myCache.set(key, JSON.stringify(charts));
     }
