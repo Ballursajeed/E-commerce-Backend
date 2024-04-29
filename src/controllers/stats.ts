@@ -4,7 +4,7 @@ import { TryCath } from "../middlewares/error.js";
 import { Product } from "../models/product.js";
 import { User } from "../models/user.js";
 import { Order } from "../models/order.js";
-import { calculatePercentage } from "../utils/features.js";
+import { calculatePercentage, getInvetories } from "../utils/features.js";
 
 export const getDashboardStats = TryCath(async (req, res, next) => {
   let stats = {};
@@ -160,18 +160,9 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
       }
     });
 
-    const categoriesCountPromise = categories.map((category) =>
-      Product.countDocuments({ category })
-    );
-
-    const categoriesCount = await Promise.all(categoriesCountPromise);
-
-    const categoryCount: Record<string, number>[] = [];
-
-    categories.forEach((category, i) => {
-      categoryCount.push({
-        [category]: Math.round((categoriesCount[i] / productsCount) * 100),
-      });
+    const categoryCount: Record<string, number>[] = await getInvetories({
+      categories,
+      productsCount,
     });
 
     const userRatio = {
@@ -215,10 +206,18 @@ export const getPieStats = TryCath(async (req, res, next) => {
 
   if (myCache.has(key)) charts = JSON.parse(myCache.get(key) as string);
   else {
-    const [processingOrder, shippedOrder, deliveredOrder] = await Promise.all([
+    const [
+      processingOrder,
+      shippedOrder,
+      deliveredOrder,
+      categories,
+      productsCount,
+    ] = await Promise.all([
       Order.countDocuments({ status: "Processing" }),
       Order.countDocuments({ status: "Shipped" }),
       Order.countDocuments({ status: "Delivered" }),
+      Product.distinct("category"),
+      Product.countDocuments(),
     ]);
 
     const orderFullFillment = {
@@ -227,8 +226,20 @@ export const getPieStats = TryCath(async (req, res, next) => {
       delivered: deliveredOrder,
     };
 
+    console.log(
+      orderFullFillment.processing,
+      orderFullFillment.shipped,
+      orderFullFillment.delivered
+    );
+
+    const productCategoriesRatio: Record<string, number>[] = await getInvetories({
+      categories,
+      productsCount,
+    });
+
     charts = {
       orderFullFillment,
+      productCategoriesRatio,
     };
 
     myCache.set(key, JSON.stringify(charts));
