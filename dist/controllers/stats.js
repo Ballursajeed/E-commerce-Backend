@@ -151,7 +151,7 @@ export const getPieStats = TryCath(async (req, res, next) => {
             "tax",
             "shippingCharges",
         ]);
-        const [processingOrder, shippedOrder, deliveredOrder, categories, productsCount, productsOutOfStock, allOrders,] = await Promise.all([
+        const [processingOrder, shippedOrder, deliveredOrder, categories, productsCount, productsOutOfStock, allOrders, allUsers, adminUsers, customerUsers,] = await Promise.all([
             Order.countDocuments({ status: "Processing" }),
             Order.countDocuments({ status: "Shipped" }),
             Order.countDocuments({ status: "Delivered" }),
@@ -159,6 +159,9 @@ export const getPieStats = TryCath(async (req, res, next) => {
             Product.countDocuments(),
             Product.countDocuments({ stock: 0 }),
             allOrderPromise,
+            User.find({}).select(["dob"]),
+            User.countDocuments({ role: "admin" }),
+            User.countDocuments({ role: "user" }),
         ]);
         const orderFullFillment = {
             processing: processingOrder,
@@ -186,11 +189,22 @@ export const getPieStats = TryCath(async (req, res, next) => {
             burnt,
             marketingCost,
         };
+        const usersAgeGroup = {
+            teen: allUsers.filter((i) => i.age < 20).length,
+            adult: allUsers.filter((i) => i.age >= 20 && i.age < 40).length,
+            old: allUsers.filter((i) => i.age >= 40).length,
+        };
+        const adminCustomer = {
+            admin: adminUsers,
+            customer: customerUsers,
+        };
         charts = {
             orderFullFillment,
             productCategoriesRatio,
             stockAvailability,
             revenueDistribution,
+            adminCustomer,
+            usersAgeGroup,
         };
         myCache.set(key, JSON.stringify(charts));
     }

@@ -222,6 +222,9 @@ export const getPieStats = TryCath(async (req, res, next) => {
       productsCount,
       productsOutOfStock,
       allOrders,
+      allUsers,
+      adminUsers,
+      customerUsers,
     ] = await Promise.all([
       Order.countDocuments({ status: "Processing" }),
       Order.countDocuments({ status: "Shipped" }),
@@ -230,6 +233,9 @@ export const getPieStats = TryCath(async (req, res, next) => {
       Product.countDocuments(),
       Product.countDocuments({ stock: 0 }),
       allOrderPromise,
+      User.find({}).select(["dob"]),
+      User.countDocuments({ role: "admin" }),
+      User.countDocuments({ role: "user" }),
     ]);
 
     const orderFullFillment = {
@@ -279,11 +285,24 @@ export const getPieStats = TryCath(async (req, res, next) => {
       marketingCost,
     };
 
+    const usersAgeGroup = {
+      teen: allUsers.filter((i) => i.age < 20).length,
+      adult: allUsers.filter((i) => i.age >= 20 && i.age < 40).length,
+      old: allUsers.filter((i) => i.age >= 40).length,
+    };
+
+    const adminCustomer = {
+      admin: adminUsers,
+      customer: customerUsers,
+    };
+
     charts = {
       orderFullFillment,
       productCategoriesRatio,
       stockAvailability,
       revenueDistribution,
+      adminCustomer,
+      usersAgeGroup,
     };
 
     myCache.set(key, JSON.stringify(charts));
