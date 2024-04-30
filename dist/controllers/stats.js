@@ -99,7 +99,7 @@ export const getDashboardStats = TryCath(async (req, res, next) => {
         const orderMonthRevenue = new Array(6).fill(0);
         LastSixMonthOrders.forEach((order) => {
             const creationData = order.createdAt;
-            const monthDiff = today.getMonth() - creationData.getMonth();
+            const monthDiff = (today.getMonth() - creationData.getMonth() + 12) % 12;
             if (monthDiff < 6) {
                 orderMonthCounts[6 - monthDiff - 1] += 1;
                 orderMonthRevenue[6 - monthDiff - 1] += order.total;
