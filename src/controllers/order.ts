@@ -78,7 +78,7 @@ export const newOrder = TryCath(
     if (!shippingInfo || !orderItems || !user || !subtotal || !tax || !total)
       return next(new ErrorHandler("Please Enter all Fields", 400));
 
-   const order = await Order.create({
+    const order = await Order.create({
       shippingInfo,
       orderItems,
       user,
@@ -91,12 +91,12 @@ export const newOrder = TryCath(
 
     await reduceStock(orderItems);
 
-    await invalidateCache({
+    invalidateCache({
       product: true,
       order: true,
       admin: true,
       userId: user,
-      productId:order.orderItems.map(i => String(i.productId))
+      productId: order.orderItems.map((i) => String(i.productId)),
     });
 
     return res.status(201).json({
@@ -128,7 +128,7 @@ export const processOrder = TryCath(async (req, res, next) => {
   }
 
   await order.save();
-  await invalidateCache({
+  invalidateCache({
     product: false,
     order: true,
     admin: true,
@@ -151,7 +151,7 @@ export const deleteOrder = TryCath(async (req, res, next) => {
 
   await order.deleteOne();
 
-  await invalidateCache({
+  invalidateCache({
     product: false,
     order: true,
     admin: true,

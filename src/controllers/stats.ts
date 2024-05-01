@@ -9,6 +9,7 @@ import {
   getChartData,
   getInvetories,
 } from "../utils/features.js";
+import { reverse } from "dns";
 
 export const getDashboardStats = TryCath(async (req, res, next) => {
   let stats = {};
@@ -329,7 +330,7 @@ export const getBarStats = TryCath(async (req, res, next) => {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const twelveMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 12);
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
     const LastSixMonthProductsPromise = Product.find({
       createdAt: {
@@ -377,4 +378,57 @@ export const getBarStats = TryCath(async (req, res, next) => {
   });
 });
 
-export const getLineStats = TryCath(async (req, res, next) => {});
+export const getLineStats = TryCath(async (req, res, next) => {
+  const key = "admin-line-charts";
+  let charts;
+
+  if (myCache.has(key)) charts = JSON.parse(myCache.get(key) as string);
+  else {
+    const today = new Date();
+
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const baseQuery = {
+      createdAt: {
+        $gte: twelveMonthsAgo,
+        $lte: today,
+      },
+    };
+
+    const [products, users, orders] = await Promise.all([
+      Product.find(baseQuery).select("createdAt"),
+      User.find(baseQuery).select("createdAt"),
+      Order.find(baseQuery).select(["createdAt", "discount", "total"]),
+    ]);
+
+    const productCounts = getChartData({ length: 12, today, docArr: products });
+    const discount = getChartData({
+      length: 12,
+      today,
+      docArr: orders,
+      property: "discount",
+    });
+    const revenue = getChartData({
+      length: 12,
+      today,
+      docArr: orders,
+      property: "total",
+    });
+    const userCounts = getChartData({ length: 12, today, docArr: users });
+
+    charts = {
+      users: userCounts,
+      products: productCounts,
+      discount,
+      revenue,
+    };
+
+    myCache.set(key, JSON.stringify(charts));
+  }
+
+  return res.status(200).json({
+    success: true,
+    charts,
+  });
+});

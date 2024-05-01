@@ -8,7 +8,7 @@ export const connectDB = (mongoURI) => {
         .catch((error) => console.error("MongoDB connection error:", error));
 };
 //"mongodb+srv://sajeedballur:3BkcoecCgWPgdiou@cluster0.i4gylc9.mongodb.net/"
-export const invalidateCache = async ({ product, order, admin, userId, orderId, productId, }) => {
+export const invalidateCache = ({ product, order, admin, userId, orderId, productId, }) => {
     if (product) {
         const productKeys = [
             "latest-products",
@@ -31,6 +31,12 @@ export const invalidateCache = async ({ product, order, admin, userId, orderId, 
         myCache.del(orderKeys);
     }
     if (admin) {
+        myCache.del([
+            "admin-stats",
+            "admin-pie-stats",
+            "admin-bar-charts",
+            "admin-line-charts",
+        ]);
     }
 };
 export const reduceStock = async (orderItems) => {
@@ -60,13 +66,18 @@ export const getInvetories = async ({ categories, productsCount, }) => {
     });
     return categoryCount;
 };
-export const getChartData = ({ length, docArr, today }) => {
+export const getChartData = ({ length, docArr, today, property, }) => {
     const data = new Array(length).fill(0);
     docArr.forEach((i) => {
         const creationData = i.createdAt;
         const monthDiff = (today.getMonth() - creationData.getMonth() + 12) % 12;
         if (monthDiff < length) {
-            data[length - monthDiff - 1] += 1;
+            if (property) {
+                data[length - monthDiff - 1] += i[property];
+            }
+            else {
+                data[length - monthDiff - 1] += 1;
+            }
         }
     });
     return data;

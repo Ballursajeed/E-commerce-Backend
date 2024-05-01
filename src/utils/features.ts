@@ -13,7 +13,7 @@ export const connectDB = (mongoURI: string) => {
 };
 //"mongodb+srv://sajeedballur:3BkcoecCgWPgdiou@cluster0.i4gylc9.mongodb.net/"
 
-export const invalidateCache = async ({
+export const invalidateCache = ({
   product,
   order,
   admin,
@@ -45,6 +45,12 @@ export const invalidateCache = async ({
     myCache.del(orderKeys);
   }
   if (admin) {
+    myCache.del([
+      "admin-stats",
+      "admin-pie-stats",
+      "admin-bar-charts",
+      "admin-line-charts",
+    ]);
   }
 };
 
@@ -92,22 +98,34 @@ export const getInvetories = async ({
 
 interface myDocument extends Document {
   createdAt: Date;
+  discount?: number;
+  total?: number;
 }
 
 type FuncProps = {
   length: number;
   docArr: myDocument[];
   today: Date;
+  property?: "discount" | "total";
 };
 
-export const getChartData = ({ length, docArr, today }: FuncProps) => {
+export const getChartData = ({
+  length,
+  docArr,
+  today,
+  property,
+}: FuncProps) => {
   const data: number[] = new Array(length).fill(0);
   docArr.forEach((i) => {
     const creationData = i.createdAt;
     const monthDiff = (today.getMonth() - creationData.getMonth() + 12) % 12;
 
     if (monthDiff < length) {
-      data[length - monthDiff - 1] += 1;
+      if (property) {
+        data[length - monthDiff - 1] += i[property]!;
+      } else {
+        data[length - monthDiff - 1] += 1;
+      }
     }
   });
 

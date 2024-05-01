@@ -64,12 +64,12 @@ export const newOrder = TryCath(async (req, res, next) => {
         total,
     });
     await reduceStock(orderItems);
-    await invalidateCache({
+    invalidateCache({
         product: true,
         order: true,
         admin: true,
         userId: user,
-        productId: order.orderItems.map(i => String(i.productId))
+        productId: order.orderItems.map((i) => String(i.productId)),
     });
     return res.status(201).json({
         success: true,
@@ -93,7 +93,7 @@ export const processOrder = TryCath(async (req, res, next) => {
             break;
     }
     await order.save();
-    await invalidateCache({
+    invalidateCache({
         product: false,
         order: true,
         admin: true,
@@ -111,7 +111,7 @@ export const deleteOrder = TryCath(async (req, res, next) => {
     if (!order)
         return next(new ErrorHandler("Order not Found", 404));
     await order.deleteOne();
-    await invalidateCache({
+    invalidateCache({
         product: false,
         order: true,
         admin: true,
