@@ -116,7 +116,7 @@ export const newProduct = TryCath(
       category: category.toLowerCase(),
       photo: photo?.path,
     });
- invalidateCache({ product: true, admin: true });
+    invalidateCache({ product: true, admin: true });
 
     return res.status(201).json({
       success: true,
@@ -176,7 +176,7 @@ export const deleteProduct = TryCath(async (req, res, next) => {
 
   await Product.deleteOne();
 
- invalidateCache({
+  invalidateCache({
     product: true,
     productId: String(product._id),
     admin: true,
