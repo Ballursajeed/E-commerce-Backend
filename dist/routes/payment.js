@@ -4,7 +4,7 @@ import { allCoupons, applyDiscounts, createPaymentIntent, deleteCoupon, newCoupo
 const app = express.Router();
 app.post("/create", createPaymentIntent);
 app.post("/coupon/new", AdminOnly, newCoupon);
-app.get("/discount", AdminOnly, applyDiscounts);
+app.get("/discount", applyDiscounts);
 app.get("/coupon/all", AdminOnly, allCoupons);
 app.delete("/coupon/:id", AdminOnly, deleteCoupon);
 export default app;

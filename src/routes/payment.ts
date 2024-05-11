@@ -9,7 +9,7 @@ const app = express.Router();
 
  app.post("/coupon/new",AdminOnly,newCoupon);
 
- app.get("/discount",AdminOnly,applyDiscounts);
+ app.get("/discount",applyDiscounts);
 
  app.get("/coupon/all",AdminOnly,allCoupons);
 
